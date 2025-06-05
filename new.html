@@ -1,0 +1,2330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LeadCleaner – AI-Powered Lead Cleaning Tool</title>
+  <!-- TailwindCSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Font Imports */
+    @import url("https://fonts.googleapis.com/css2?family=Lato&display=swap");
+    @import url("https://fonts.googleapis.com/css2?family=Open+Sans&display=swap");
+    @import url(
+      "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+    );
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Open Sans", sans-serif;
+      background: #f9fafb;
+      height: 100%;
+    }
+
+    /* Fade-in for sections */
+    .fade-in {
+      animation: fadeIn 0.5s ease-in;
+    }
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Loading bar gradient animation */
+    .loading-bar {
+      background: linear-gradient(90deg, #3b82f6, #8b5cf6, #3b82f6);
+      background-size: 200% 100%;
+      animation: loading 2s infinite;
+    }
+    @keyframes loading {
+      0% {
+        background-position: 200% 0;
+      }
+      100% {
+        background-position: -200% 0;
+      }
+    }
+
+    .data-grid {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    /* Toast notifications */
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #10b981;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 1000;
+      transform: translateX(400px);
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+    .toast.show {
+      transform: translateX(0);
+      opacity: 1;
+    }
+
+    /* Progress Ring */
+    .progress-ring {
+      transform: rotate(-90deg);
+    }
+    .progress-ring-circle {
+      stroke-dasharray: 283;
+      stroke-dashoffset: 283;
+      transition: stroke-dashoffset 0.35s;
+    }
+
+    /* Chat window styling inside #webcrumbs */
+    #chatWindow {
+      position: absolute;
+      bottom: 80px; /* aligns above chat button */
+      right: 20px;
+      width: 300px;
+      max-height: 440px;
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(10px);
+      border-radius: 1rem;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transform: translateY(100%);
+      transition: transform 0.3s ease;
+      z-index: 50;
+    }
+    #chatWindow.open {
+      transform: translateY(0);
+    }
+
+    /* Chat Header */
+    #chatHeader {
+      background: rgba(97, 27, 248, 0.9);
+      color: white;
+      padding: 0.75rem 1rem;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #chatHeader .material-symbols-outlined {
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    #chatHeader .material-symbols-outlined:hover {
+      opacity: 0.75;
+    }
+
+    /* Chat Body */
+    #chatBody {
+      flex: 1;
+      padding: 0.75rem;
+      overflow-y: auto;
+      background: #f4f4f4;
+    }
+    .message {
+      margin-bottom: 0.75rem;
+      display: flex;
+    }
+    .message.user {
+      justify-content: flex-end;
+    }
+    .message.bot {
+      justify-content: flex-start;
+    }
+    .message .bubble {
+      max-width: 75%;
+      padding: 0.5rem 0.75rem;
+      border-radius: 1rem;
+      line-height: 1.4;
+      font-size: 0.875rem;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    }
+    .message.user .bubble {
+      background: #611bf8;
+      color: white;
+      border-bottom-right-radius: 0.25rem;
+    }
+    .message.bot .bubble {
+      background: white;
+      color: #333;
+      border-bottom-left-radius: 0.25rem;
+      border: 1px solid #e5e7eb;
+    }
+
+    /* Chat Input Area */
+    #chatInputContainer {
+      display: flex;
+      border-top: 1px solid #e5e7eb;
+      background: white;
+    }
+    #chatInput {
+      flex: 1;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.875rem;
+      border: none;
+      outline: none;
+    }
+    #chatSendBtn {
+      background: #611bf8;
+      color: white;
+      border: none;
+      padding: 0 0.75rem;
+      cursor: pointer;
+      font-size: 1rem;
+      opacity: 0.75;
+      transition: opacity 0.2s;
+    }
+    #chatSendBtn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    #chatSendBtn:not(:disabled):hover {
+      opacity: 1;
+    }
+
+    /* Modal Overlay */
+    .modal-overlay {
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    /* Sunburst Chart Placeholder */
+    #sunburstPlaceholder {
+      width: 100%;
+      height: 300px;
+      background: repeating-conic-gradient(#e5e7eb 0 25%, #f9fafb 0 50%) 50%/30px 30px;
+      border-radius: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div id="webcrumbs" class="relative">
+    <!-- Main Container -->
+    <div class="w-full max-w-[1200px] mx-auto p-8 min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-indigo-50">
+
+      <!-- Header -->
+      <header class="flex items-center justify-between p-4 bg-white/80 backdrop-blur-md rounded-xl shadow-lg mb-4 border border-white/20">
+        <div class="flex items-center space-x-3">
+          <div class="relative">
+            <span id="globalSearchIcon" class="material-symbols-outlined text-3xl text-primary-600 hover:scale-110 transition-transform duration-300 cursor-pointer">
+              search
+            </span>
+            <span class="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full animate-pulse"></span>
+          </div>
+          <h1 class="text-2xl font-bold bg-gradient-to-r from-primary-600 to-indigo-600 bg-clip-text text-transparent">
+            LeadCleaner
+          </h1>
+        </div>
+
+        <!-- Centered Global Search (⌘K) -->
+        <div class="flex-1 mx-8 hidden md:block">
+          <div class="relative">
+            <input
+              type="text"
+              id="globalSearchInput"
+              placeholder="Search leads… (⌘ K)"
+              class="w-full pl-12 pr-4 py-3 bg-gray-100/50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all duration-200"
+            />
+            <span class="material-symbols-outlined absolute left-4 top-3.5 text-gray-400">
+              search
+            </span>
+          </div>
+        </div>
+
+        <!-- Top‐right: Notifications + Profile + Tabs -->
+        <div class="flex items-center space-x-4">
+          <!-- Notifications -->
+          <button id="notificationBtn" class="relative p-3 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all duration-200">
+            <span class="material-symbols-outlined">notifications</span>
+            <span id="notificationBadge" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">3</span>
+          </button>
+
+          <!-- Profile Dropdown -->
+          <details class="relative">
+            <summary class="flex items-center space-x-2 cursor-pointer p-2 hover:bg-gray-100 rounded-lg transition-all duration-200 list-none">
+              <div class="w-8 h-8 bg-gradient-to-r from-primary-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-medium">U</div>
+              <span class="material-symbols-outlined text-gray-400">expand_more</span>
+            </summary>
+            <div class="absolute right-0 top-12 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
+              <button data-view="accountView" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors duration-200">Account</button>
+              <button data-view="integrationsView" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors duration-200">Integrations</button>
+              <button data-view="preferencesView" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors duration-200">Preferences</button>
+              <button data-view="notificationsView" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors duration-200">Notifications</button>
+              <button data-view="teamView" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors duration-200">Team & Collaboration</button>
+              <hr class="my-2" />
+              <button id="logoutBtn" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors duration-200">Log Out</button>
+            </div>
+          </details>
+
+          <!-- Top‐nav: Additional Tabs -->
+          <nav class="hidden md:flex items-center space-x-4">
+            <button data-view="historyView" class="px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 text-gray-700">History</button>
+            <button data-view="settingsView" class="px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 text-gray-700">Settings</button>
+          </nav>
+        </div>
+      </header>
+
+      <!-- Progress Steps (Upload→Clean→Inspect→Export) -->
+      <div id="progressStepper" class="mb-8">
+        <div class="flex items-center justify-center space-x-8">
+          <div class="flex items-center space-x-2">
+            <div
+              id="step1"
+              class="w-12 h-12 bg-gradient-to-r from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg hover:scale-105 transition-all duration-300 cursor-pointer"
+              data-step="uploadSection"
+            >1</div>
+            <span class="font-medium text-primary-600">Upload</span>
+          </div>
+          <div id="progress1" class="w-16 h-1 bg-gradient-to-r from-primary-200 to-gray-200 rounded-full"></div>
+          <div class="flex items-center space-x-2">
+            <div id="step2" class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 font-bold transition-all duration-300 cursor-pointer" data-step="cleanSection">2</div>
+            <span id="step2Text" class="font-medium text-gray-500">Clean</span>
+          </div>
+          <div id="progress2" class="w-16 h-1 bg-gray-200 rounded-full"></div>
+          <div class="flex items-center space-x-2">
+            <div id="step3" class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 font-bold transition-all duration-300 cursor-pointer" data-step="inspectSection">3</div>
+            <span id="step3Text" class="font-medium text-gray-500">Inspect</span>
+          </div>
+          <div id="progress3" class="w-16 h-1 bg-gray-200 rounded-full"></div>
+          <div class="flex items-center space-x-2">
+            <div id="step4" class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 font-bold transition-all duration-300 cursor-pointer" data-step="exportSection">4</div>
+            <span id="step4Text" class="font-medium text-gray-500">Export</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content Area (switches between Upload/Clean/Inspect/Export/History/Settings) -->
+      <main id="mainContent">
+        <!-- ========== Step 1: Upload ========= -->
+        <section id="uploadSection" class="text-center">
+          <h2 class="text-4xl font-bold mb-8 bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+            Step 1: Upload Raw CSV
+          </h2>
+          <div class="max-w-2xl mx-auto mb-8">
+            <div class="group relative">
+              <div class="absolute inset-0 bg-gradient-to-r from-primary-400 to-indigo-400 rounded-2xl blur opacity-20 group-hover:opacity-30 transition-opacity duration-300"></div>
+              <div
+                id="dropZone"
+                class="relative bg-white/80 backdrop-blur-md border-2 border-dashed border-primary-300 rounded-2xl p-12 hover:border-primary-500 hover:shadow-2xl transform hover:scale-105 transition-all duration-500 cursor-pointer"
+              >
+                <div class="mb-6">
+                  <div class="w-20 h-20 mx-auto bg-gradient-to-r from-primary-500 to-indigo-500 rounded-2xl flex items-center justify-center transform rotate-3 hover:rotate-0 transition-transform duration-300">
+                    <span class="material-symbols-outlined text-4xl text-white">upload_file</span>
+                  </div>
+                </div>
+                <h3 class="text-2xl font-bold mb-4 text-gray-800">
+                  Drag & Drop or Click to Upload CSV
+                </h3>
+                <div class="flex items-center justify-center space-x-6 text-sm text-gray-600 mb-6">
+                  <div class="flex items-center space-x-2">
+                    <span class="material-symbols-outlined text-emerald-500">check_circle</span>
+                    <span>Up to 10 k Rows</span>
+                  </div>
+                  <div class="flex items-center space-x-2">
+                    <span class="material-symbols-outlined text-emerald-500">check_circle</span>
+                    <span>5 MB Max</span>
+                  </div>
+                  <div class="flex items-center space-x-2">
+                    <span class="material-symbols-outlined text-primary-500 animate-spin">landscape</span>
+                    <span>AI-Powered</span>
+                  </div>
+                </div>
+                <input type="file" id="csvFile" accept=".csv" class="hidden" />
+                <button
+                  id="chooseFileBtn"
+                  class="bg-gradient-to-r from-primary-500 to-indigo-500 text-white px-8 py-3 rounded-lg font-medium hover:from-primary-600 hover:to-indigo-600 transform hover:scale-105 transition-all duration-200 shadow-lg"
+                >
+                  Choose File
+                </button>
+                <div class="mt-4">
+                  <button
+                    id="useDummyDataBtn"
+                    class="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-6 py-2 rounded-lg font-medium hover:from-emerald-600 hover:to-teal-600 transition-all duration-200"
+                  >
+                    Use 100 000 Dummy Records
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pro Tip: Auto‐Mapping -->
+          <details class="max-w-2xl mx-auto mb-8 group">
+            <summary
+              class="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-xl p-6 cursor-pointer hover:shadow-lg transition-all duration-300 list-none"
+            >
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                  <span class="material-symbols-outlined text-amber-600">lightbulb</span>
+                  <span class="font-medium text-amber-800">Pro Tip: Auto‐Map Columns</span>
+                </div>
+                <span class="material-symbols-outlined text-amber-600 group-open:rotate-180 transition-transform duration-300">expand_more</span>
+              </div>
+            </summary>
+            <div class="mt-4 p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
+              <p class="text-gray-700 mb-4">
+                Your CSV columns don’t exactly match “Name”/“Email”? Click **Accept Auto‐Mapping** for instant field mapping based on header similarity and sample data.
+              </p>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                  <div class="flex items-center space-x-2 mb-2">
+                    <span class="material-symbols-outlined text-blue-600">person</span>
+                    <span class="font-medium text-blue-800">“full_name” → Name</span>
+                  </div>
+                  <p class="text-sm text-blue-600">Detected with 95% confidence</p>
+                </div>
+                <div class="p-4 bg-gradient-to-r from-emerald-50 to-green-50 rounded-lg border border-emerald-200">
+                  <div class="flex items-center space-x-2 mb-2">
+                    <span class="material-symbols-outlined text-emerald-600">email</span>
+                    <span class="font-medium text-emerald-800">“work_email” → Email</span>
+                  </div>
+                  <p class="text-sm text-emerald-600">Detected with 98% confidence</p>
+                </div>
+                <div class="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
+                  <div class="flex items-center space-x-2 mb-2">
+                    <span class="material-symbols-outlined text-purple-600">business</span>
+                    <span class="font-medium text-purple-800">“org” → Company</span>
+                  </div>
+                  <p class="text-sm text-purple-600">Detected with 92% confidence</p>
+                </div>
+              </div>
+              <button
+                id="autoMapBtn"
+                class="mt-4 bg-gradient-to-r from-primary-500 to-indigo-500 text-white px-6 py-2 rounded-lg font-medium hover:from-primary-600 hover:to-indigo-600 transition-all duration-200"
+              >
+                Accept Auto‐Mapping
+              </button>
+            </div>
+          </details>
+
+          <!-- Feature Cards -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+            <div class="group">
+              <div class="bg-white/60 backdrop-blur-md rounded-xl p-6 border border-white/30 hover:shadow-xl transform hover:-translate-y-2 transition-all duration-300">
+                <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <span class="material-symbols-outlined text-white">speed</span>
+                </div>
+                <h3 class="font-bold text-gray-800 mb-2">Lightning Fast</h3>
+                <p class="text-gray-600 text-sm">
+                  Process thousands of leads in seconds with our optimized pipeline
+                </p>
+              </div>
+            </div>
+            <div class="group">
+              <div class="bg-white/60 backdrop-blur-md rounded-xl p-6 border border-white/30 hover:shadow-xl transform hover:-translate-y-2 transition-all duration-300">
+                <div class="w-12 h-12 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <span class="material-symbols-outlined text-white">psychology</span>
+                </div>
+                <h3 class="font-bold text-gray-800 mb-2">AI-Powered</h3>
+                <p class="text-gray-600 text-sm">
+                  Smart column detection and validation using machine learning
+                </p>
+              </div>
+            </div>
+            <div class="group">
+              <div class="bg-white/60 backdrop-blur-md rounded-xl p-6 border border-white/30 hover:shadow-xl transform hover:-translate-y-2 transition-all duration-300">
+                <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <span class="material-symbols-outlined text-white">security</span>
+                </div>
+                <h3 class="font-bold text-gray-800 mb-2">Secure & Private</h3>
+                <p class="text-gray-600 text-sm">
+                  Your data is encrypted and processed with enterprise-grade security
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== Step 2: Clean ========== -->
+        <section id="cleanSection" class="hidden fade-in">
+          <h2 class="text-4xl font-bold mb-8 bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent text-center">
+            Step 2: Clean Your Data
+          </h2>
+
+          <!-- Loading Animation (initially hidden) -->
+          <div id="loadingSection" class="hidden text-center mb-8">
+            <div class="max-w-md mx-auto bg-white/80 backdrop-blur-md rounded-xl p-8 shadow-lg">
+              <div class="w-16 h-16 mx-auto mb-4">
+                <svg class="progress-ring w-16 h-16" viewBox="0 0 100 100">
+                  <circle
+                    class="text-gray-200"
+                    stroke-width="10"
+                    stroke="currentColor"
+                    fill="transparent"
+                    r="45"
+                    cx="50"
+                    cy="50"
+                  />
+                  <circle
+                    id="progressCircle"
+                    class="progress-ring-circle text-primary-600"
+                    stroke-width="10"
+                    stroke-dasharray="283"
+                    stroke-dashoffset="283"
+                    stroke-linecap="round"
+                    stroke="currentColor"
+                    fill="transparent"
+                    r="45"
+                    cx="50"
+                    cy="50"
+                  />
+                </svg>
+              </div>
+              <h3 id="processingTitle" class="text-xl font-bold mb-2">Processing Your Data</h3>
+              <p id="processingText" class="text-gray-600 mb-4">Analyzing data structure…</p>
+              <div class="w-full bg-gray-200 rounded-full h-2">
+                <div id="progressBar" class="loading-bar h-2 rounded-full" style="width: 0%"></div>
+              </div>
+              <p id="progressPercent" class="text-sm text-gray-500 mt-2">0%</p>
+            </div>
+          </div>
+
+          <!-- Cleaning Options & Metrics (initially hidden) -->
+          <div id="cleaningResults" class="hidden">
+            <!-- Metrics Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+              <div class="bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-lg">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm text-gray-600">Total Records</span>
+                  <span class="material-symbols-outlined text-blue-500">dataset</span>
+                </div>
+                <div id="totalRecords" class="text-2xl font-bold text-gray-800">0</div>
+              </div>
+              <div class="bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-lg">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm text-gray-600">Valid Records</span>
+                  <span class="material-symbols-outlined text-emerald-500">check_circle</span>
+                </div>
+                <div id="validRecords" class="text-2xl font-bold text-emerald-600">0</div>
+              </div>
+              <div class="bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-lg">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm text-gray-600">Issues Found</span>
+                  <span class="material-symbols-outlined text-amber-500">warning</span>
+                </div>
+                <div id="issuesFound" class="text-2xl font-bold text-amber-600">0</div>
+              </div>
+              <div class="bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-lg">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm text-gray-600">Duplicates</span>
+                  <span class="material-symbols-outlined text-red-500">content_copy</span>
+                </div>
+                <div id="duplicatesFound" class="text-2xl font-bold text-red-600">0</div>
+              </div>
+            </div>
+
+            <!-- Cleaning Options & “Start Cleaning” Button -->
+            <div class="bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-lg mb-8">
+              <h3 class="text-xl font-bold mb-4">Cleaning Actions</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <label class="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+                  <input type="checkbox" id="removeDuplicates" class="w-5 h-5 text-primary-600" checked />
+                  <div>
+                    <div class="font-medium">Remove Duplicates</div>
+                    <div class="text-sm text-gray-600">Remove duplicate email addresses</div>
+                  </div>
+                </label>
+                <label class="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+                  <input type="checkbox" id="validateEmails" class="w-5 h-5 text-primary-600" checked />
+                  <div>
+                    <div class="font-medium">Validate Emails</div>
+                    <div class="text-sm text-gray-600">Check email format validity</div>
+                  </div>
+                </label>
+                <label class="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+                  <input type="checkbox" id="standardizeNames" class="w-5 h-5 text-primary-600" checked />
+                  <div>
+                    <div class="font-medium">Standardize Names</div>
+                    <div class="text-sm text-gray-600">Fix capitalization and formatting</div>
+                  </div>
+                </label>
+                <label class="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+                  <input type="checkbox" id="cleanCompanies" class="w-5 h-5 text-primary-600" checked />
+                  <div>
+                    <div class="font-medium">Clean Company Names</div>
+                    <div class="text-sm text-gray-600">Standardize company naming</div>
+                  </div>
+                </label>
+              </div>
+              <button
+                id="startCleaningBtn"
+                class="mt-6 bg-gradient-to-r from-primary-500 to-indigo-500 text-white px-8 py-3 rounded-lg font-medium hover:from-primary-600 hover:to-indigo-600 transition-all duration-200"
+              >
+                Start Cleaning Process
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ======== Step 3: Inspect ======== -->
+        <section id="inspectSection" class="hidden fade-in">
+          <h2 class="text-4xl font-bold mb-8 bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent text-center">
+            Step 3: Inspect Cleaned Data
+          </h2>
+
+          <!-- 3D Flippable Summary Cards -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="relative bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-lg transform hover:-translate-y-2 transition-all duration-300 group cursor-pointer" data-flip="card1">
+              <div class="front">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm text-gray-600">Total Rows</span>
+                  <span class="material-symbols-outlined text-blue-500">dataset</span>
+                </div>
+                <div id="inspectTotalRows" class="text-2xl font-bold text-gray-800">0</div>
+              </div>
+              <div class="back absolute inset-0 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 shadow-inner hidden">
+                <h4 class="font-medium text-gray-700 mb-2">Details</h4>
+                <p class="text-sm text-gray-600">All rows loaded into the pipeline (including duplicates and invalids).</p>
+              </div>
+            </div>
+
+            <div class="relative bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-lg transform hover:-translate-y-2 transition-all duration-300 group cursor-pointer" data-flip="card2">
+              <div class="front">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm text-gray-600">Valid Emails</span>
+                  <span class="material-symbols-outlined text-emerald-500">check_circle</span>
+                </div>
+                <div id="inspectValidRows" class="text-2xl font-bold text-emerald-600">0</div>
+              </div>
+              <div class="back absolute inset-0 bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl p-6 shadow-inner hidden">
+                <h4 class="font-medium text-gray-700 mb-2">Details</h4>
+                <p class="text-sm text-gray-600">Rows that passed all cleaning steps (no issues).</p>
+              </div>
+            </div>
+
+            <div class="relative bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-lg transform hover:-translate-y-2 transition-all duration-300 group cursor-pointer" data-flip="card3">
+              <div class="front">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm text-gray-600">High‐Priority Leads</span>
+                  <span class="material-symbols-outlined text-amber-500">priority_high</span>
+                </div>
+                <div id="inspectHighPriority" class="text-2xl font-bold text-amber-600">0</div>
+              </div>
+              <div class="back absolute inset-0 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-xl p-6 shadow-inner hidden">
+                <h4 class="font-medium text-gray-700 mb-2">Details</h4>
+                <p class="text-sm text-gray-600">Leads flagged as priority (dummy tag logic).</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Interactive Sunburst Chart Placeholder -->
+          <div class="bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-lg mb-8">
+            <h3 class="text-xl font-bold mb-4">Lead Status Distribution</h3>
+            <div id="sunburstPlaceholder" class="mb-4"></div>
+            <p class="text-sm text-gray-600">(Sunburst Chart with Status, Priority, Source domains → Dummy visualization.)</p>
+          </div>
+
+          <!-- Advanced Data Table -->
+          <div class="bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-lg mb-8">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-xl font-bold">Data Preview</h3>
+              <div class="flex items-center space-x-4">
+                <select id="filterColumnInspect" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                  <option value="">Filter by column…</option>
+                  <option value="name">Name</option>
+                  <option value="email">Email</option>
+                  <option value="company">Company</option>
+                  <option value="phone">Phone</option>
+                  <option value="status">Status</option>
+                </select>
+                <input
+                  type="text"
+                  id="filterValueInspect"
+                  placeholder="Filter value…"
+                  class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+            </div>
+
+            <div class="data-grid">
+              <table id="dataTableInspect" class="w-full">
+                <thead class="bg-gray-50 sticky top-0">
+                  <tr> 
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="dataTableBodyInspect" class="bg-white divide-y divide-gray-200">
+                  <!-- Data rows injected via JS -->
+                </tbody>
+              </table>
+              <p id="noDataMessageInspect" class="text-center text-gray-500 mt-4 hidden">No records to display.</p>
+            </div>
+
+            <!-- Pagination -->
+            <div class="mt-4 flex items-center justify-between">
+              <div class="text-sm text-gray-600">
+                Showing <span id="showingStartInspect">1</span> to <span id="showingEndInspect">50</span> of <span id="totalFilteredInspect">0</span> entries
+              </div>
+              <div class="flex items-center space-x-2">
+                <button id="prevPageBtnInspect" class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
+                <span id="pageInfoInspect" class="px-3 py-2 text-sm text-gray-600">Page 1 of 1</span>
+                <button id="nextPageBtnInspect" class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Next</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="text-center">
+            <button
+              id="proceedToExportBtn"
+              class="bg-gradient-to-r from-primary-500 to-indigo-500 text-white px-8 py-3 rounded-lg font-medium hover:from-primary-600 hover:to-indigo-600 transition-all duration-200"
+            >
+              Proceed to Export
+            </button>
+          </div>
+        </section>
+
+        <!-- ======== Step 4: Export ======== -->
+        <section id="exportSection" class="hidden fade-in">
+          <h2 class="text-4xl font-bold mb-8 bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent text-center">
+            Step 4: Export Clean Data
+          </h2>
+
+          <div class="max-w-2xl mx-auto">
+            <div class="bg-white/80 backdrop-blur-md rounded-xl p-8 shadow-lg mb-8">
+              <h3 class="text-xl font-bold mb-6 text-center">Choose Export Format</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <label class="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-primary-300 transition-colors">
+                  <input type="radio" name="exportFormat" value="csv" class="w-5 h-5 text-primary-600" checked />
+                  <div class="flex items-center space-x-3">
+                    <span class="material-symbols-outlined text-emerald-500">table_chart</span>
+                    <div>
+                      <div class="font-medium">CSV File</div>
+                      <div class="text-sm text-gray-600">Comma-separated values</div>
+                    </div>
+                  </div>
+                </label>
+                <label class="flex items-center space-x-3 p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-primary-300 transition-colors">
+                  <input type="radio" name="exportFormat" value="xlsx" class="w-5 h-5 text-primary-600" />
+                  <div class="flex items-center space-x-3">
+                    <span class="material-symbols-outlined text-blue-500">description</span>
+                    <div>
+                      <div class="font-medium">Excel File</div>
+                      <div class="text-sm text-gray-600">Microsoft Excel format</div>
+                    </div>
+                  </div>
+                </label>
+              </div>
+
+              <div class="mb-6">
+                <h4 class="font-medium mb-3">Export Options</h4>
+                <div class="space-y-3">
+                  <label class="flex items-center space-x-3">
+                    <input type="checkbox" id="includeHeaders" class="w-5 h-5 text-primary-600" checked />
+                    <span>Include column headers</span>
+                  </label>
+                  <label class="flex items-center space-x-3">
+                    <input type="checkbox" id="onlyValid" class="w-5 h-5 text-primary-600" />
+                    <span>Export only valid records</span>
+                  </label>
+                  <label class="flex items-center space-x-3">
+                    <input type="checkbox" id="addTimestamp" class="w-5 h-5 text-primary-600" checked />
+                    <span>Add export timestamp</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="text-center">
+                <button
+                  id="downloadBtn"
+                  class="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-8 py-3 rounded-lg font-medium hover:from-emerald-600 hover:to-teal-600 transition-all duration-200 shadow-lg"
+                >
+                  <span class="material-symbols-outlined inline mr-2">download</span>
+                  Download Clean Data
+                </button>
+              </div>
+            </div>
+
+            <div class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 text-center">
+              <div class="w-16 h-16 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span class="material-symbols-outlined text-2xl text-white">task_alt</span>
+              </div>
+              <h3 class="text-xl font-bold text-emerald-800 mb-2">Data Cleaning Complete!</h3>
+              <p class="text-emerald-700 mb-4">Your data has been successfully cleaned and is ready for use.</p>
+              <div class="flex items-center justify-center space-x-6 text-sm">
+                <div class="flex items-center space-x-2">
+                  <span class="material-symbols-outlined text-emerald-600">check_circle</span>
+                  <span id="exportValidCount" class="font-medium">0 valid records</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <span class="material-symbols-outlined text-emerald-600">speed</span>
+                  <span class="font-medium">Processed in seconds</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== History View ========== -->
+        <section id="historyView" class="hidden fade-in">
+          <h2 class="text-4xl font-bold mb-8 bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent text-center">
+            History of Pipeline Runs
+          </h2>
+
+          <!-- Search & Filter Bar -->
+          <div class="mb-4 flex flex-col md:flex-row items-start md:items-center justify-between space-y-4 md:space-y-0">
+            <div class="flex items-center space-x-4">
+              <input
+                type="text"
+                id="historySearchInput"
+                placeholder="Search Run ID, File Name…"
+                class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+              <input
+                type="date"
+                id="historyStartDate"
+                class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+              <span class="text-gray-600">to</span>
+              <input
+                type="date"
+                id="historyEndDate"
+                class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+              <select id="historyStatusFilter" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                <option value="">All Statuses</option>
+                <option value="Success">Success</option>
+                <option value="Failed">Failed</option>
+                <option value="In Progress">In Progress</option>
+              </select>
+            </div>
+            <button id="clearHistoryFilters" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition-all duration-200">Clear Filters</button>
+          </div>
+
+          <!-- Runs Table -->
+          <div class="overflow-x-auto bg-white/80 backdrop-blur-md rounded-xl shadow-lg">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Run ID</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uploaded By</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File Name</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date / Time</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="historyTableBody" class="bg-white divide-y divide-gray-200">
+                <!-- Dummy rows injected via JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination Controls -->
+          <div class="mt-4 flex items-center justify-between">
+            <div class="text-sm text-gray-600">
+              Showing <span id="historyShowingStart">1</span> to <span id="historyShowingEnd">10</span> of <span id="historyTotalEntries">0</span> entries
+            </div>
+            <div class="flex items-center space-x-2">
+              <button id="historyPrevPage" class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">‹ Previous</button>
+              <span id="historyPageInfo" class="px-3 py-2 text-sm text-gray-600">Page 1 of 1</span>
+              <button id="historyNextPage" class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Next ›</button>
+            </div>
+          </div>
+
+          <!-- Modals -->
+          <div id="historyModalOverlay" class="hidden fixed inset-0 flex items-center justify-center z-50 modal-overlay">
+            <div class="bg-white rounded-xl shadow-lg max-w-lg w-full p-6 relative">
+              <button id="historyModalClose" class="absolute top-3 right-3 text-gray-600 hover:text-gray-900">
+                <span class="material-symbols-outlined">close</span>
+              </button>
+              <h3 id="historyModalTitle" class="text-xl font-bold mb-4">Run Details</h3>
+              <div id="historyModalContent" class="space-y-2 text-gray-700 text-sm">
+                <!-- Injected details (dummy) -->
+              </div>
+              <div class="mt-6 flex justify-end space-x-4">
+                <button id="historyModalReexport" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all duration-200">Re-Export</button>
+                <button id="historyModalCloseBtn" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all duration-200">Close</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ======== Settings View (Account, Integrations, Preferences, Notifications, Team) ======== -->
+        <section id="settingsView" class="hidden fade-in">
+          <h2 class="text-4xl font-bold mb-8 bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent text-center">
+            Settings
+          </h2>
+
+          <!-- Tabs for Settings Sub‐sections -->
+          <div class="mb-8 border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8">
+              <button class="py-4 px-1 border-b-2 border-transparent text-gray-600 hover:text-primary-600 hover:border-primary-600 focus:outline-none" data-subview="accountView">Account</button>
+              <button class="py-4 px-1 border-b-2 border-transparent text-gray-600 hover:text-primary-600 hover:border-primary-600 focus:outline-none" data-subview="integrationsView">Integrations</button>
+              <button class="py-4 px-1 border-b-2 border-transparent text-gray-600 hover:text-primary-600 hover:border-primary-600 focus:outline-none" data-subview="preferencesView">Preferences</button>
+              <button class="py-4 px-1 border-b-2 border-transparent text-gray-600 hover:text-primary-600 hover:border-primary-600 focus:outline-none" data-subview="notificationsView">Notifications</button>
+              <button class="py-4 px-1 border-b-2 border-transparent text-gray-600 hover:text-primary-600 hover:border-primary-600 focus:outline-none" data-subview="teamView">Team & Collaboration</button>
+            </nav>
+          </div>
+
+          <!-- ===== Sub‐view: Account ===== -->
+          <div id="accountView" class="settingsSubview">
+            <div class="max-w-xl mx-auto bg-white/80 backdrop-blur-md rounded-xl p-8 shadow-lg">
+              <h3 class="text-xl font-bold mb-6">Profile</h3>
+              <div class="flex items-center space-x-6 mb-6">
+                <div class="relative">
+                  <img id="profileAvatar" src="https://ui-avatars.com/api/?name=U+User&background=611bf8&color=fff&size=128" alt="Avatar" class="w-20 h-20 rounded-full object-cover" />
+                  <button id="changeAvatarBtn" class="absolute bottom-0 right-0 bg-indigo-600 text-white p-1 rounded-full hover:bg-indigo-700 transition-all duration-200">
+                    <span class="material-symbols-outlined text-sm">edit</span>
+                  </button>
+                </div>
+                <div class="flex-1">
+                  <label class="block text-sm font-medium text-gray-700">Full Name</label>
+                  <input id="profileName" type="text" value="User McUserface" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                  <label class="block text-sm font-medium text-gray-700 mt-4">Email (read-only)</label>
+                  <input id="profileEmail" type="email" value="user@example.com" readonly class="mt-1 block w-full border border-gray-300 bg-gray-100 rounded-lg px-3 py-2" />
+                </div>
+              </div>
+              <button id="saveProfileBtn" class="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-all duration-200">Save Profile</button>
+              <hr class="my-6" />
+              <h3 class="text-xl font-bold mb-4">Change Password</h3>
+              <div class="space-y-4 mb-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Current Password</label>
+                  <input id="currentPassword" type="password" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">New Password</label>
+                  <input id="newPassword" type="password" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Confirm Password</label>
+                  <input id="confirmPassword" type="password" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                </div>
+              </div>
+              <button id="changePasswordBtn" class="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-all duration-200">Change Password</button>
+            </div>
+          </div>
+
+          <!-- ===== Sub‐view: Integrations ===== -->
+          <div id="integrationsView" class="settingsSubview hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- HubSpot Card -->
+              <div class="bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-lg">
+                <div class="flex items-center justify-between mb-4">
+                  <h4 class="font-medium text-gray-700">HubSpot</h4>
+                  <span id="hubspotStatus" class="text-sm font-medium text-red-500">Disconnected</span>
+                </div>
+                <p class="text-sm text-gray-600 mb-4">Sync cleaned leads directly to HubSpot.</p>
+                <button id="hubspotConnectBtn" class="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-all duration-200">Connect HubSpot</button>
+              </div>
+              <!-- Salesforce Card -->
+              <div class="bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-lg">
+                <div class="flex items-center justify-between mb-4">
+                  <h4 class="font-medium text-gray-700">Salesforce</h4>
+                  <span id="salesforceStatus" class="text-sm font-medium text-red-500">Disconnected</span>
+                </div>
+                <p class="text-sm text-gray-600 mb-4">Export data straight into Salesforce CRM.</p>
+                <button id="salesforceConnectBtn" class="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-all duration-200">Connect Salesforce</button>
+              </div>
+              <!-- Zapier Card -->
+              <div class="bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-lg">
+                <div class="flex items-center justify-between mb-4">
+                  <h4 class="font-medium text-gray-700">Zapier</h4>
+                  <span id="zapierStatus" class="text-sm font-medium text-red-500">Disconnected</span>
+                </div>
+                <p class="text-sm text-gray-600 mb-4">Automate workflows with Zapier integrations.</p>
+                <button id="zapierConnectBtn" class="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-all duration-200">Connect Zapier</button>
+              </div>
+              <!-- Slack Card -->
+              <div class="bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-lg">
+                <div class="flex items-center justify-between mb-4">
+                  <h4 class="font-medium text-gray-700">Slack</h4>
+                  <span id="slackStatus" class="text-sm font-medium text-red-500">Disconnected</span>
+                </div>
+                <p class="text-sm text-gray-600 mb-4">Send notifications directly to your Slack channels.</p>
+                <button id="slackConnectBtn" class="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-all duration-200">Connect Slack</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===== Sub‐view: Preferences ===== -->
+          <div id="preferencesView" class="settingsSubview hidden">
+            <div class="max-w-xl mx-auto bg-white/80 backdrop-blur-md rounded-xl p-8 shadow-lg space-y-8">
+              <!-- Appearance -->
+              <div>
+                <h3 class="text-xl font-bold mb-4">Appearance</h3>
+                <div class="flex items-center space-x-6">
+                  <label class="flex items-center space-x-3">
+                    <input id="themeLight" type="radio" name="theme" class="w-5 h-5 text-primary-600" />
+                    <span>Light</span>
+                  </label>
+                  <label class="flex items-center space-x-3">
+                    <input id="themeDark" type="radio" name="theme" class="w-5 h-5 text-primary-600" />
+                    <span>Dark</span>
+                  </label>
+                  <label class="flex items-center space-x-3">
+                    <input id="themeSystem" type="radio" name="theme" class="w-5 h-5 text-primary-600" checked />
+                    <span>System</span>
+                  </label>
+                </div>
+                <div class="mt-4">
+                  <label class="block text-sm font-medium text-gray-700">Font Size</label>
+                  <input id="fontSizeSlider" type="range" min="12" max="24" value="16" class="w-full mt-2" />
+                  <div class="mt-1 text-gray-600 text-sm">Current: <span id="fontSizeValue">16px</span></div>
+                </div>
+                <div class="mt-4">
+                  <label class="flex items-center space-x-3">
+                    <input id="enableAnimations" type="checkbox" class="w-5 h-5 text-primary-600" checked />
+                    <span>Enable Animations</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Pipeline Defaults -->
+              <div>
+                <h3 class="text-xl font-bold mb-4">Pipeline Defaults</h3>
+                <div class="space-y-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700">Default Dedup Threshold</label>
+                    <input id="dedupThresholdSlider" type="range" min="0" max="100" value="20" class="w-full mt-2" />
+                    <div class="mt-1 text-gray-600 text-sm">Current: <span id="dedupThresholdValue">20%</span></div>
+                  </div>
+                  <div>
+                    <span class="block text-sm font-medium text-gray-700 mb-1">Default Email Validation Mode</span>
+                    <label class="flex items-center space-x-3">
+                      <input name="emailMode" type="radio" value="regex" checked class="w-5 h-5 text-primary-600" />
+                      <span>Regex</span>
+                    </label>
+                    <label class="flex items-center space-x-3 mt-2">
+                      <input name="emailMode" type="radio" value="mx" class="w-5 h-5 text-primary-600" />
+                      <span>MX</span>
+                    </label>
+                    <label class="flex items-center space-x-3 mt-2">
+                      <input name="emailMode" type="radio" value="smtp" class="w-5 h-5 text-primary-600" />
+                      <span>SMTP</span>
+                    </label>
+                  </div>
+                  <div>
+                    <button id="editGlobalKeywordsBtn" class="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-all duration-200">Edit Global Keywords (Title Scoring)</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Export Defaults -->
+              <div>
+                <h3 class="text-xl font-bold mb-4">Export Defaults</h3>
+                <div class="space-y-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700">Default Format</label>
+                    <select id="defaultExportFormat" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500">
+                      <option value="csv">CSV</option>
+                      <option value="xlsx">XLSX</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700">Default Columns to Export</label>
+                    <select id="defaultColumns" multiple class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 h-24">
+                      <option value="name" selected>Name</option>
+                      <option value="email" selected>Email</option>
+                      <option value="company" selected>Company</option>
+                      <option value="phone" selected>Phone</option>
+                      <option value="status">Status</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="flex items-center space-x-3">
+                      <input id="autoScheduleLastRun" type="checkbox" class="w-5 h-5 text-primary-600" />
+                      <span>Auto Schedule Last Run</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Accessibility Settings -->
+              <div>
+                <h3 class="text-xl font-bold mb-4">Accessibility Settings</h3>
+                <div class="space-y-4">
+                  <label class="flex items-center space-x-3">
+                    <input id="accessHighContrast" type="checkbox" class="w-5 h-5 text-primary-600" />
+                    <span>High Contrast Mode</span>
+                  </label>
+                  <label class="flex items-center space-x-3">
+                    <input id="accessReducedMotion" type="checkbox" class="w-5 h-5 text-primary-600" />
+                    <span>Reduced Motion</span>
+                  </label>
+                  <label class="flex items-center space-x-3">
+                    <input id="accessScreenReader" type="checkbox" class="w-5 h-5 text-primary-600" />
+                    <span>Screen Reader Announcements</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Data & Privacy -->
+              <div>
+                <h3 class="text-xl font-bold mb-4">Data & Privacy</h3>
+                <div class="space-y-4">
+                  <button id="exportPrivacyPolicy" class="underline text-primary-600 hover:text-primary-700">Export Privacy Policy</button><br />
+                  <button id="downloadMyData" class="bg-emerald-500 text-white px-4 py-2 rounded-lg hover:bg-emerald-600 transition-all duration-200">Download My Data</button><br />
+                  <button id="deleteAllData" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-all duration-200">Delete All Data</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===== Sub‐view: Notifications ===== -->
+          <div id="notificationsView" class="settingsSubview hidden">
+            <div class="max-w-lg mx-auto bg-white/80 backdrop-blur-md rounded-xl p-8 shadow-lg space-y-6">
+              <!-- Email Notifications -->
+              <div>
+                <h3 class="text-xl font-bold mb-4">Email Notifications</h3>
+                <label class="flex items-center space-x-3">
+                  <input id="emailAlertsToggle" type="checkbox" class="w-5 h-5 text-primary-600" checked />
+                  <span>Receive Email Alerts</span>
+                </label>
+                <div id="emailFrequencyContainer" class="mt-4 space-y-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700">Frequency</label>
+                    <select id="emailFrequency" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500">
+                      <option value="real-time">Real-time</option>
+                      <option value="daily">Daily Digest</option>
+                      <option value="weekly">Weekly Digest</option>
+                    </select>
+                  </div>
+                  <div class="space-y-2">
+                    <label class="flex items-center space-x-3">
+                      <input type="checkbox" class="w-5 h-5 text-primary-600" />
+                      <span>Pipeline Success</span>
+                    </label>
+                    <label class="flex items-center space-x-3">
+                      <input type="checkbox" class="w-5 h-5 text-primary-600" />
+                      <span>Pipeline Failure</span>
+                    </label>
+                    <label class="flex items-center space-x-3">
+                      <input type="checkbox" class="w-5 h-5 text-primary-600" />
+                      <span>Scheduled Export Complete</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <hr />
+
+              <!-- In-App Notifications -->
+              <div>
+                <h3 class="text-xl font-bold mb-4">In-App Notifications</h3>
+                <label class="flex items-center space-x-3">
+                  <input id="inAppToastsToggle" type="checkbox" class="w-5 h-5 text-primary-600" checked />
+                  <span>Enable In-App Toasts</span>
+                </label>
+                <label class="flex items-center space-x-3 mt-4">
+                  <input id="soundEffectsToggle" type="checkbox" class="w-5 h-5 text-primary-600" />
+                  <span>Sound Effects</span>
+                </label>
+                <button id="testSoundBtn" class="ml-10 mt-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-all duration-200">Test Sound</button>
+              </div>
+
+              <hr />
+
+              <!-- Slack Integration Notifications -->
+              <div>
+                <h3 class="text-xl font-bold mb-4">Slack Notifications</h3>
+                <div class="flex items-center justify-between mb-4">
+                  <span class="text-sm text-gray-700">Connected Workspace</span>
+                  <span id="slackWorkspace" class="text-sm font-medium text-emerald-600">My Workspace</span>
+                </div>
+                <button id="slackTestNotificationBtn" class="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-all duration-200">Test Notification</button>
+                <div class="mt-4">
+                  <label class="block text-sm font-medium text-gray-700">Channel</label>
+                  <select id="slackChannelSelect" class="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500">
+                    <option value="#general">#general</option>
+                    <option value="#alerts">#alerts</option>
+                    <option value="#data">#data</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===== Sub‐view: Team & Collaboration ===== -->
+          <div id="teamView" class="settingsSubview hidden">
+            <div class="max-w-3xl mx-auto space-y-8">
+              <!-- Team Members Table -->
+              <div class="bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-lg">
+                <h3 class="text-xl font-bold mb-4">Team Members</h3>
+                <div class="overflow-x-auto">
+                  <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                      <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avatar & Name</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="teamTableBody" class="bg-white divide-y divide-gray-200">
+                      <!-- Dummy members injected via JS -->
+                    </tbody>
+                  </table>
+                </div>
+                <div class="mt-4">
+                  <h4 class="text-md font-medium mb-2">Invite New Member</h4>
+                  <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+                    <input type="email" id="inviteEmail" placeholder="Email address" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500" />
+                    <select id="inviteRole" class="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
+                      <option value="Member">Member</option>
+                      <option value="Admin">Admin</option>
+                      <option value="Owner">Owner</option>
+                    </select>
+                    <button id="sendInviteBtn" class="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-all duration-200">Send Invite</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Activity Feed -->
+              <div class="bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-lg">
+                <h3 class="text-xl font-bold mb-4">Activity Feed</h3>
+                <ul id="activityFeed" class="space-y-4 text-sm text-gray-700">
+                  <!-- Dummy activity items injected via JS -->
+                </ul>
+              </div>
+
+              <!-- Real‐Time Collaboration Indicators -->
+              <div class="bg-white/80 backdrop-blur-md rounded-xl p-6 shadow-lg">
+                <h3 class="text-xl font-bold mb-4">Real‐Time Collaboration</h3>
+                <div class="flex items-center space-x-4">
+                  <div class="relative">
+                    <img src="https://ui-avatars.com/api/?name=Mary&background=22c55e&color=fff&size=48" alt="Mary" class="w-12 h-12 rounded-full border-2 border-emerald-500" />
+                    <span class="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full"></span>
+                    <div class="absolute top-14 -left-4 text-xs text-gray-600 bg-white px-2 py-1 rounded shadow-sm">Mary – Last action 5 s ago</div>
+                  </div>
+                  <div class="relative">
+                    <img src="https://ui-avatars.com/api/?name=John&background=3b82f6&color=fff&size=48" alt="John" class="w-12 h-12 rounded-full border-2 border-blue-500" />
+                    <span class="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full"></span>
+                    <div class="absolute top-14 -left-4 text-xs text-gray-600 bg-white px-2 py-1 rounded shadow-sm">John – Last action 12 s ago</div>
+                  </div>
+                  <div class="relative">
+                    <img src="https://ui-avatars.com/api/?name=Alice&background=8b5cf6&color=fff&size=48" alt="Alice" class="w-12 h-12 rounded-full border-2 border-purple-500" />
+                    <span class="absolute -top-1 -right-1 w-3 h-3 bg-gray-400 rounded-full"></span>
+                    <div class="absolute top-14 -left-4 text-xs text-gray-600 bg-white px-2 py-1 rounded shadow-sm">Alice – Idle</div>
+                  </div>
+                </div>
+                <div class="mt-4 text-sm text-gray-600">
+                  <p>If someone is editing a node, their avatar will appear next to it. Versioned undo/redo toasts show who made which change.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- Chat Button -->
+      <div class="absolute bottom-6 right-6 z-40">
+        <button
+          id="chatBtn"
+          class="w-14 h-14 bg-gradient-to-r from-primary-500 to-indigo-500 text-white rounded-full shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-300 flex items-center justify-center"
+        >
+          <span class="material-symbols-outlined">chat</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Chat Window -->
+    <div id="chatWindow">
+      <div id="chatHeader">
+        <span>Ask LeadBuddy</span>
+        <span id="closeChat" class="material-symbols-outlined">close</span>
+      </div>
+      <div id="chatBody">
+        <!-- Initial Bot Welcome -->
+        <div class="message bot">
+          <div class="bubble">👋 Hello! I’m LeadCleaner Bot. How can I assist you today?</div>
+        </div>
+      </div>
+      <div id="chatInputContainer">
+        <input type="text" id="chatInput" placeholder="Type a message…" autocomplete="off" />
+        <button id="chatSendBtn" disabled>Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tailwind Config -->
+  <script>
+    tailwind.config = {
+      content: ["./src/**/*.{html,js}", "./**/*.html"],
+      theme: {
+        fontFamily: {
+          sans: [
+            "Open Sans", "ui-sans-serif", "system-ui", "sans-serif",
+            '"Apple Color Emoji"', '"Segoe UI Emoji"', '"Segoe UI Symbol"', '"Noto Color Emoji"',
+          ],
+          title: ["Lato", "ui-sans-serif", "system-ui", "sans-serif"],
+          body: ["Open Sans", "ui-sans-serif", "system-ui", "sans-serif"],
+        },
+        extend: {
+          colors: {
+            primary: {
+              50: "#f3f1ff",
+              100: "#e9e5ff",
+              200: "#d5cfff",
+              300: "#b7a9ff",
+              400: "#9478ff",
+              500: "#7341ff",
+              600: "#631bff",
+              700: "#611bf8",
+              800: "#4607d0",
+              900: "#3c08aa",
+              950: "#220174",
+              DEFAULT: "#611bf8",
+            },
+          },
+        },
+      },
+      plugins: [],
+      important: "#webcrumbs",
+    };
+  </script>
+
+  <!-- Main JavaScript Logic -->
+  <script>
+    // -------------------------------
+    // Application State & Dummy Data
+    // -------------------------------
+    let currentStep = 1;
+    let rawData = [];
+    let cleanedData = [];
+    let filteredDataInspect = [];
+    let currentPageInspect = 1;
+    const recordsPerPageInspect = 50;
+
+    // Dummy History Runs
+    let historyData = [];
+    let filteredHistoryData = [];
+    let historyPage = 1;
+    const historyPerPage = 10;
+
+    // Dummy Team Members
+    let teamMembers = [
+      { id: 1, name: "Mary Johnson", email: "mary@example.com", role: "Admin", status: "Active" },
+      { id: 2, name: "John Smith", email: "john@example.com", role: "Member", status: "Pending" },
+      { id: 3, name: "Alice Brown", email: "alice@example.com", role: "Owner", status: "Active" }
+    ];
+
+    // Dummy Activity Feed
+    let activityFeed = [
+      { ts: "Jun 05 14:23", text: "Sachin ran pipeline #000125." },
+      { ts: "Jun 05 14:20", text: "Mary changed Validate Email settings." },
+      { ts: "Jun 05 14:18", text: "John connected to HubSpot." },
+      { ts: "Jun 05 14:15", text: "Alice invited new member: Bob Lee." }
+    ];
+
+    // Generate 25 dummy history runs
+    function generateDummyHistory() {
+      const statuses = ["Success", "Failed", "In Progress"];
+      for (let i = 1; i <= 25; i++) {
+        const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+        const randomDate = new Date(Date.now() - Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000);
+        historyData.push({
+          runId: `#${String(i).padStart(6, "0")}`,
+          uploadedBy: i % 2 === 0 ? "Sachin" : "Mary",
+          fileName: `leads_${i}.csv`,
+          date: randomDate.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata" }),
+          status: randomStatus
+        });
+      }
+      filteredHistoryData = [...historyData];
+    }
+    generateDummyHistory();
+
+    // Generate Dummy Data for Upload (10k default, overridden if user clicks 100k)
+    function generateDummyData(count = 10000) {
+      const firstNames = [
+        "John","Jane","Mike","Sarah","David","Lisa","Chris","Emma",
+        "Ryan","Anna","Mark","Jennifer","Paul","Michelle","Kevin","Amanda",
+        "Brian","Jessica","Steven","Ashley"
+      ];
+      const lastNames = [
+        "Smith","Johnson","Williams","Brown","Jones","Garcia","Miller","Davis",
+        "Rodriguez","Martinez","Hernandez","Lopez","Gonzalez","Wilson","Anderson",
+        "Thomas","Taylor","Moore","Jackson","Martin"
+      ];
+      const companies = [
+        "TechCorp","InnovateLLC","DataSystems","CloudSolutions","DigitalFirst",
+        "NextGen Industries","SmartTech","FutureSoft","ProServices","GlobalTech",
+        "PrimeSolutions","EliteGroup","MegaCorp","UltraTech","PowerSystems"
+      ];
+      const domains = [
+        "gmail.com","outlook.com","yahoo.com","company.com","business.org",
+        "enterprise.net","corporate.com","tech.io","startup.co","firm.biz"
+      ];
+
+      const data = [];
+      for (let i = 0; i < count; i++) {
+        const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+        const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+        const companyName = companies[Math.floor(Math.random() * companies.length)];
+        const domain = domains[Math.floor(Math.random() * domains.length)];
+
+        let email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@${domain}`;
+        let name = `${firstName} ${lastName}`;
+        let company = companyName;
+        let phone = `+1-${Math.floor(Math.random() * 900 + 100)}-${Math.floor(Math.random() * 900 + 100)}-${Math.floor(Math.random() * 9000 + 1000)}`;
+
+        // Introduce some data-quality issues ~10% of the time
+        if (Math.random() < 0.1) {
+          if (Math.random() < 0.3) email = email.replace("@", "");
+          if (Math.random() < 0.3) name = name.toUpperCase();
+          if (Math.random() < 0.3) company = company.toLowerCase();
+        }
+
+        data.push({
+          id: i + 1,
+          name: name,
+          email: email,
+          company: company,
+          phone: phone,
+          status: "pending",
+          priority: Math.ceil(Math.random() * 5),    // Dummy priority 1-5
+          source: domains[Math.floor(Math.random() * domains.length)]  // Dummy source domain
+        });
+      }
+
+      // Add ~50 duplicates
+      for (let i = 0; i < 50; i++) {
+        const randomIndex = Math.floor(Math.random() * data.length);
+        const dup = { ...data[randomIndex] };
+        dup.id = data.length + 1;
+        data.push(dup);
+      }
+
+      return data;
+    }
+
+    // -------------------------------
+    // Utility Functions
+    // -------------------------------
+    function showToast(message, type = "success") {
+      const toast = document.createElement("div");
+      toast.className = `toast ${type === "success" ? "bg-emerald-500" : "bg-red-500"}`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.classList.add("show"), 100);
+      setTimeout(() => {
+        toast.classList.remove("show");
+        setTimeout(() => document.body.removeChild(toast), 300);
+      }, 3000);
+    }
+
+    function updateStepUI(step) {
+      for (let i = 1; i <= 4; i++) {
+        const stepEl = document.getElementById(`step${i}`);
+        const progressEl = document.getElementById(`progress${i}`);
+        const textEl = document.getElementById(`step${i}Text`);
+
+        if (i < step) {
+          stepEl.className =
+            "w-12 h-12 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold transition-all duration-300";
+          stepEl.innerHTML = '<span class="material-symbols-outlined">check</span>';
+          if (progressEl)
+            progressEl.className = "w-16 h-1 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full";
+          if (textEl) textEl.className = "font-medium text-emerald-600";
+        } else if (i === step) {
+          stepEl.className =
+            "w-12 h-12 bg-gradient-to-r from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg transition-all duration-300";
+          stepEl.textContent = i;
+          if (textEl) textEl.className = "font-medium text-primary-600";
+        } else {
+          stepEl.className =
+            "w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 font-bold transition-all duration-300";
+          stepEl.textContent = i;
+          if (progressEl) progressEl.className = "w-16 h-1 bg-gray-200 rounded-full";
+          if (textEl) textEl.className = "font-medium text-gray-500";
+        }
+      }
+    }
+
+    function showSection(sectionId) {
+      const sections = [
+        "uploadSection",
+        "cleanSection",
+        "inspectSection",
+        "exportSection",
+        "historyView",
+        "settingsView"
+      ];
+      sections.forEach(id => {
+        const el = document.getElementById(id);
+        if (id === sectionId) {
+          el.classList.remove("hidden");
+          el.classList.add("fade-in");
+        } else {
+          el.classList.add("hidden");
+          el.classList.remove("fade-in");
+        }
+      });
+    }
+
+    function validateEmail(email) {
+      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return re.test(email);
+    }
+
+    function standardizeName(name) {
+      return name
+        .split(" ")
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(" ");
+    }
+
+    function cleanCompanyName(company) {
+      return company
+        .split(" ")
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(" ");
+    }
+
+    // -------------------------------
+    // Data Cleaning Logic
+    // -------------------------------
+    function cleanData() {
+      const removeDuplicates = document.getElementById("removeDuplicates").checked;
+      const validateEmails = document.getElementById("validateEmails").checked;
+      const standardizeNames = document.getElementById("standardizeNames").checked;
+      const cleanCompanies = document.getElementById("cleanCompanies").checked;
+
+      let processed = [...rawData];
+      let issuesCount = 0;
+      let duplicatesCount = 0;
+
+      // 1) Validate & standardize each record
+      processed.forEach(record => {
+        record.issues = [];
+
+        // a) Email format
+        if (validateEmails && !validateEmail(record.email)) {
+          record.issues.push("Invalid email format");
+          issuesCount++;
+        }
+
+        // b) Name standardization
+        if (standardizeNames && record.name) {
+          const original = record.name;
+          record.name = standardizeName(record.name);
+          if (original !== record.name) {
+            record.issues.push("Name standardized");
+          }
+        }
+
+        // c) Company name cleanup
+        if (cleanCompanies && record.company) {
+          const original = record.company;
+          record.company = cleanCompanyName(record.company);
+          if (original !== record.company) {
+            record.issues.push("Company name cleaned");
+          }
+        }
+
+        record.status = record.issues.length === 0 ? "valid" : "needs_review";
+      });
+
+      // 2) Remove duplicates by email if requested
+      if (removeDuplicates) {
+        const seen = new Set();
+        const unique = [];
+
+        processed.forEach(record => {
+          const key = record.email.toLowerCase();
+          if (!seen.has(key)) {
+            seen.add(key);
+            unique.push(record);
+          } else {
+            duplicatesCount++;
+          }
+        });
+
+        processed = unique;
+      }
+
+      cleanedData = processed;
+      filteredDataInspect = [...cleanedData];
+
+      // Update the metrics cards in Clean
+      document.getElementById("totalRecords").textContent = rawData.length.toLocaleString();
+      document.getElementById("validRecords").textContent = cleanedData.filter(r => r.status === "valid").length.toLocaleString();
+      document.getElementById("issuesFound").textContent = issuesCount.toLocaleString();
+      document.getElementById("duplicatesFound").textContent = duplicatesCount.toLocaleString();
+
+      return processed;
+    }
+
+    // -------------------------------
+    // Render Inspect Table (with pagination & filtering)
+    // -------------------------------
+    function renderDataTableInspect(data = filteredDataInspect, page = 1) {
+      const tbody = document.getElementById("dataTableBodyInspect");
+      const noDataMsg = document.getElementById("noDataMessageInspect");
+      const start = (page - 1) * recordsPerPageInspect;
+      const end = start + recordsPerPageInspect;
+      const pageData = data.slice(start, end);
+
+      tbody.innerHTML = "";
+
+      if (data.length === 0) {
+        noDataMsg.classList.remove("hidden");
+      } else {
+        noDataMsg.classList.add("hidden");
+      }
+
+      pageData.forEach(record => {
+        const row = document.createElement("tr");
+        row.className = "hover:bg-gray-50 transition-colors";
+
+        const statusBadge = record.status === "valid"
+          ? '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Valid</span>'
+          : '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Needs Review</span>';
+
+        row.innerHTML = `
+          <td class="px-4 py-3 text-sm text-gray-900">${record.name}</td>
+          <td class="px-4 py-3 text-sm text-gray-900">${record.email}</td>
+          <td class="px-4 py-3 text-sm text-gray-900">${record.company}</td>
+          <td class="px-4 py-3 text-sm text-gray-900">${record.phone}</td>
+          <td class="px-4 py-3 text-sm">${statusBadge}</td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      const totalPages = Math.ceil(data.length / recordsPerPageInspect);
+      document.getElementById("showingStartInspect").textContent = data.length > 0 ? start + 1 : 0;
+      document.getElementById("showingEndInspect").textContent = Math.min(end, data.length);
+      document.getElementById("totalFilteredInspect").textContent = data.length.toLocaleString();
+      document.getElementById("pageInfoInspect").textContent = `Page ${page} of ${totalPages}`;
+      document.getElementById("prevPageBtnInspect").disabled = (page === 1);
+      document.getElementById("nextPageBtnInspect").disabled = (page === totalPages || totalPages === 0);
+    }
+
+    function filterDataInspect() {
+      const column = document.getElementById("filterColumnInspect").value;
+      const value = document.getElementById("filterValueInspect").value.toLowerCase();
+
+      if (!column || !value) {
+        filteredDataInspect = [...cleanedData];
+      } else {
+        filteredDataInspect = cleanedData.filter(r =>
+          r[column] && r[column].toString().toLowerCase().includes(value)
+        );
+      }
+      currentPageInspect = 1;
+      renderDataTableInspect(filteredDataInspect, currentPageInspect);
+    }
+
+    // -------------------------------
+    // Download / Export Logic
+    // -------------------------------
+    function downloadData() {
+      const format = document.querySelector('input[name="exportFormat"]:checked').value;
+      const includeHeaders = document.getElementById("includeHeaders").checked;
+      const onlyValid = document.getElementById("onlyValid").checked;
+      const addTimestamp = document.getElementById("addTimestamp").checked;
+
+      let dataToExport = onlyValid
+        ? cleanedData.filter(r => r.status === "valid")
+        : cleanedData;
+
+      if (format === "csv") {
+        let csv = "";
+        if (includeHeaders) {
+          csv += 'Name,Email,Company,Phone,Status\n';
+        }
+        dataToExport.forEach(record => {
+          csv += `"${record.name}","${record.email}","${record.company}","${record.phone}","${record.status}"\n`;
+        });
+
+        const blob = new Blob([csv], { type: "text/csv" });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        const timestamp = addTimestamp
+          ? `_${new Date().toISOString().slice(0,19).replace(/:/g, "-")}`
+          : "";
+        a.href = url;
+        a.download = `cleaned_leads${timestamp}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      } else {
+        alert("Excel export is not implemented in this demo.");
+      }
+
+      showToast(`Downloaded ${dataToExport.length.toLocaleString()} records successfully!`);
+    }
+
+    // -------------------------------
+    // History View Logic
+    // -------------------------------
+    function renderHistoryTable(page = 1) {
+      const tbody = document.getElementById("historyTableBody");
+      tbody.innerHTML = "";
+      const start = (page - 1) * historyPerPage;
+      const end = start + historyPerPage;
+      const pageData = filteredHistoryData.slice(start, end);
+
+      pageData.forEach(item => {
+        const row = document.createElement("tr");
+        row.className = "hover:bg-gray-50 transition-colors";
+
+        row.innerHTML = `
+          <td class="px-4 py-3 text-sm text-gray-900">${item.runId}</td>
+          <td class="px-4 py-3 text-sm text-gray-900">${item.uploadedBy}</td>
+          <td class="px-4 py-3 text-sm text-gray-900">${item.fileName}</td>
+          <td class="px-4 py-3 text-sm text-gray-900">${item.date}</td>
+          <td class="px-4 py-3 text-sm text-gray-900">${item.status}</td>
+          <td class="px-4 py-3 text-sm flex space-x-2">
+            <button class="historyViewBtn px-2 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all duration-200">👁</button>
+            <button class="historyDeleteBtn px-2 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200">🗑</button>
+            <button class="historyExportBtn px-2 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all duration-200">📥</button>
+          </td>
+        `;
+        // Attach data-index for click handlers
+        row.querySelector(".historyViewBtn").dataset.index = start + pageData.indexOf(item);
+        row.querySelector(".historyDeleteBtn").dataset.index = start + pageData.indexOf(item);
+        row.querySelector(".historyExportBtn").dataset.index = start + pageData.indexOf(item);
+        tbody.appendChild(row);
+      });
+
+      const totalPages = Math.ceil(filteredHistoryData.length / historyPerPage);
+      document.getElementById("historyShowingStart").textContent = filteredHistoryData.length > 0 ? start + 1 : 0;
+      document.getElementById("historyShowingEnd").textContent = Math.min(end, filteredHistoryData.length);
+      document.getElementById("historyTotalEntries").textContent = filteredHistoryData.length.toLocaleString();
+      document.getElementById("historyPageInfo").textContent = `Page ${page} of ${totalPages}`;
+      document.getElementById("historyPrevPage").disabled = (page === 1);
+      document.getElementById("historyNextPage").disabled = (page === totalPages || totalPages === 0);
+
+      // Add event listeners for buttons
+      document.querySelectorAll(".historyViewBtn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          const idx = Number(e.currentTarget.dataset.index);
+          openHistoryModal(filteredHistoryData[idx]);
+        });
+      });
+      document.querySelectorAll(".historyDeleteBtn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          const idx = Number(e.currentTarget.dataset.index);
+          deleteHistoryRun(idx);
+        });
+      });
+      document.querySelectorAll(".historyExportBtn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          const idx = Number(e.currentTarget.dataset.index);
+          exportHistoryRun(idx);
+        });
+      });
+    }
+
+    function filterHistoryData() {
+      const query = document.getElementById("historySearchInput").value.toLowerCase();
+      const startDate = document.getElementById("historyStartDate").value;
+      const endDate = document.getElementById("historyEndDate").value;
+      const statusFilter = document.getElementById("historyStatusFilter").value;
+
+      filteredHistoryData = historyData.filter(r => {
+        let match = true;
+        if (query) {
+          match = r.runId.toLowerCase().includes(query) ||
+                  r.fileName.toLowerCase().includes(query);
+        }
+        if (match && statusFilter) {
+          match = r.status === statusFilter;
+        }
+        if (match && startDate) {
+          match = new Date(r.date) >= new Date(startDate);
+        }
+        if (match && endDate) {
+          match = new Date(r.date) <= new Date(endDate);
+        }
+        return match;
+      });
+      historyPage = 1;
+      renderHistoryTable(historyPage);
+    }
+
+    function clearHistoryFilters() {
+      document.getElementById("historySearchInput").value = "";
+      document.getElementById("historyStartDate").value = "";
+      document.getElementById("historyEndDate").value = "";
+      document.getElementById("historyStatusFilter").value = "";
+      filterHistoryData();
+    }
+
+    function openHistoryModal(item) {
+      const overlay = document.getElementById("historyModalOverlay");
+      const title = document.getElementById("historyModalTitle");
+      const content = document.getElementById("historyModalContent");
+      title.textContent = `Details for ${item.runId}`;
+      content.innerHTML = `
+        <p><strong>Run ID:</strong> ${item.runId}</p>
+        <p><strong>Uploaded By:</strong> ${item.uploadedBy}</p>
+        <p><strong>File Name:</strong> ${item.fileName}</p>
+        <p><strong>Date / Time:</strong> ${item.date}</p>
+        <p><strong>Status:</strong> ${item.status}</p>
+        <p><strong>Pipeline Snapshot:</strong> Dummy pipeline (Upload → Dedupe → Validate Email → Title Score)</p>
+        <p><strong>Preview:</strong> <em>First 5 rows of cleaned data would appear here.</em></p>
+      `;
+      overlay.classList.remove("hidden");
+    }
+
+    function closeHistoryModal() {
+      document.getElementById("historyModalOverlay").classList.add("hidden");
+    }
+
+    function deleteHistoryRun(idx) {
+      if (confirm(`Delete Run ${filteredHistoryData[idx].runId}?`)) {
+        // Remove from both filteredHistoryData and historyData
+        const globalIdx = historyData.findIndex(r => r.runId === filteredHistoryData[idx].runId);
+        if (globalIdx !== -1) historyData.splice(globalIdx, 1);
+        filterHistoryData();
+        showToast("Run deleted successfully");
+      }
+    }
+
+    function exportHistoryRun(idx) {
+      // Dummy export
+      showToast(`Exported summary for ${filteredHistoryData[idx].runId}`);
+    }
+
+    // -------------------------------
+    // Settings View Logic
+    // -------------------------------
+    // Switch between subviews within Settings
+    document.querySelectorAll("[data-subview]").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const view = e.currentTarget.dataset.subview;
+        document.querySelectorAll(".settingsSubview").forEach(sub => sub.classList.add("hidden"));
+        document.getElementById(view).classList.remove("hidden");
+      });
+    });
+
+    // Update font size label
+    document.getElementById("fontSizeSlider").addEventListener("input", (e) => {
+      document.getElementById("fontSizeValue").textContent = `${e.target.value}px`;
+    });
+
+    // Update dedupe threshold label
+    document.getElementById("dedupThresholdSlider").addEventListener("input", (e) => {
+      document.getElementById("dedupThresholdValue").textContent = `${e.target.value}%`;
+    });
+
+    // Dummy connect/disconnect for Integrations
+    const integrationButtons = [
+      { btn: "hubspotConnectBtn", status: "hubspotStatus", name: "HubSpot" },
+      { btn: "salesforceConnectBtn", status: "salesforceStatus", name: "Salesforce" },
+      { btn: "zapierConnectBtn", status: "zapierStatus", name: "Zapier" },
+      { btn: "slackConnectBtn", status: "slackStatus", name: "Slack" }
+    ];
+    integrationButtons.forEach(item => {
+      document.getElementById(item.btn).addEventListener("click", () => {
+        const statusEl = document.getElementById(item.status);
+        if (statusEl.textContent === "Disconnected") {
+          statusEl.textContent = `Connected as user@example.com`;
+          statusEl.classList.remove("text-red-500");
+          statusEl.classList.add("text-emerald-600");
+          showToast(`${item.name} connected`);
+        } else {
+          statusEl.textContent = "Disconnected";
+          statusEl.classList.remove("text-emerald-600");
+          statusEl.classList.add("text-red-500");
+          showToast(`${item.name} disconnected`);
+        }
+      });
+    });
+
+    // Invite new member
+    document.getElementById("sendInviteBtn").addEventListener("click", () => {
+      const email = document.getElementById("inviteEmail").value.trim();
+      const role = document.getElementById("inviteRole").value;
+      if (!email) {
+        alert("Please enter an email to invite.");
+        return;
+      }
+      teamMembers.push({
+        id: teamMembers.length + 1,
+        name: email.split("@")[0].charAt(0).toUpperCase() + email.split("@")[0].slice(1),
+        email: email,
+        role: role,
+        status: "Pending"
+      });
+      renderTeamTable();
+      document.getElementById("inviteEmail").value = "";
+      document.getElementById("inviteRole").value = "Member";
+      showToast(`Invitation sent to ${email}`);
+    });
+
+    function renderTeamTable() {
+      const tbody = document.getElementById("teamTableBody");
+      tbody.innerHTML = "";
+      teamMembers.forEach((member, idx) => {
+        const row = document.createElement("tr");
+        row.className = "hover:bg-gray-50 transition-colors";
+        row.innerHTML = `
+          <td class="px-4 py-3 text-sm text-gray-900 flex items-center space-x-4">
+            <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=611bf8&color=fff&size=32" alt="${member.name}" class="w-8 h-8 rounded-full" />
+            <span>${member.name}</span>
+          </td>
+          <td class="px-4 py-3 text-sm text-gray-900">${member.email}</td>
+          <td class="px-4 py-3 text-sm text-gray-900">${member.role}</td>
+          <td class="px-4 py-3 text-sm text-gray-900">${member.status}</td>
+          <td class="px-4 py-3 text-sm flex space-x-2">
+            <button data-action="resend" data-index="${idx}" class="px-2 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all duration-200">Resend</button>
+            <button data-action="remove" data-index="${idx}" class="px-2 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200">Remove</button>
+          </td>
+        `;
+        // Attach event listeners
+        row.querySelector("[data-action='resend']").addEventListener("click", (e) => {
+          const i = Number(e.currentTarget.dataset.index);
+          showToast(`Resent invite to ${teamMembers[i].email}`);
+        });
+        row.querySelector("[data-action='remove']").addEventListener("click", (e) => {
+          const i = Number(e.currentTarget.dataset.index);
+          const removed = teamMembers.splice(i, 1);
+          renderTeamTable();
+          showToast(`Removed ${removed[0].email} from team`);
+        });
+        tbody.appendChild(row);
+      });
+    }
+    // Initial render
+    renderTeamTable();
+
+    function renderActivityFeed() {
+      const ul = document.getElementById("activityFeed");
+      ul.innerHTML = "";
+      activityFeed.forEach(item => {
+        const li = document.createElement("li");
+        li.className = "flex items-center space-x-2";
+        li.innerHTML = `<span class="text-gray-400 text-xs">${item.ts} –</span> <span>${item.text}</span>`;
+        ul.appendChild(li);
+      });
+    }
+    renderActivityFeed();
+
+    // -------------------------------
+    // AI Chatbot Logic (Extended)
+    // -------------------------------
+    const chatBtn = document.getElementById("chatBtn");
+    const chatWindow = document.getElementById("chatWindow");
+    const closeChat = document.getElementById("closeChat");
+    const chatBody = document.getElementById("chatBody");
+    const chatInput = document.getElementById("chatInput");
+    const chatSendBtn = document.getElementById("chatSendBtn");
+
+    // Toggle chat window
+    chatBtn.addEventListener("click", () => {
+      chatWindow.classList.toggle("open");
+      setTimeout(() => {
+        chatBody.scrollTop = chatBody.scrollHeight;
+      }, 100);
+    });
+    closeChat.addEventListener("click", () => {
+      chatWindow.classList.remove("open");
+    });
+
+    // Enable/disable Send button
+    chatInput.addEventListener("input", () => {
+      const text = chatInput.value.trim();
+      chatSendBtn.disabled = text.length === 0;
+    });
+
+    // Canned Responses + Extended Dummy “AI” Logic
+    const cannedResponses = [
+      {
+        keywords: ["hello", "hi", "hey"],
+        response: "👋 Hi there! Iʼm LeadCleaner Bot. You can ask me about uploading CSVs, cleaning data, exporting, history, or settings. How may I help?"
+      },
+      {
+        keywords: ["help", "support", "assist"],
+        response: "Sure! Here are some things I can help with:\n- Uploading a CSV (click “Choose File” or “Use Dummy Data”).\n- Cleaning your data: removing duplicates, validating emails, standardizing names, etc.\n- Exporting clean data to CSV.\n- Checking history: “Show me last run details.”\n- Updating settings: “Change my default export format to XLSX.”"
+      },
+      {
+        keywords: ["upload", "csv", "file"],
+        response: "To upload a CSV, click on **Choose File** and select your `.csv` file (up to 10 K rows and 5 MB). Alternatively, click **Use 100 000 Dummy Records** to load sample data."
+      },
+      {
+        keywords: ["dummy", "generate", "records"],
+        response: "Clicking **Use 100 000 Dummy Records** generates a large set of example leads (with some deliberate issues) for you to practice cleaning. Let me know when youʼre ready to start cleaning!"
+      },
+      {
+        keywords: ["clean", "remove duplicates", "validate", "standardize", "issues"],
+        response: "Once you see the cleaning options, you can choose to remove duplicates, validate email addresses, standardize names, or clean company names. Then click **Start Cleaning Process** to begin."
+      },
+      {
+        keywords: ["export", "download", "csv", "xlsx"],
+        response: "When ready to export, select **CSV File** (or Excel if available), choose your options (include headers, only valid, timestamp), then click **Download Clean Data**."
+      },
+      {
+        keywords: ["history", "run", "runs"],
+        response: "Here is your pipeline history. You can filter by date, status, or search by Run ID. To view details of a specific run, click the 👁 icon in the History table."
+      },
+      {
+        keywords: ["settings", "preference", "account", "integration", "notifications"],
+        response: "You can modify settings from the top‐right profile dropdown or click **Settings** in the navigation. There, you can update your account, connect integrations, set preferences, and manage notifications and team."
+      },
+      {
+        keywords: ["thanks", "thank you", "ty"],
+        response: "Youʼre welcome! 😊 If you have any other questions, just let me know."
+      }
+    ];
+
+    // Extra dummy capabilities
+    function getBotReply(userText) {
+      const text = userText.toLowerCase();
+      // 1) Check canned keywords
+      for (let item of cannedResponses) {
+        for (let kw of item.keywords) {
+          if (text.includes(kw)) {
+            return item.response;
+          }
+        }
+      }
+      // 2) Dataset queries (example: “How many invalid emails last run?”)
+      if (text.includes("invalid") && text.includes("last run")) {
+        const invalidCount = cleanedData.filter(r => r.status !== "valid").length;
+        return `In the last run, there were ${invalidCount.toLocaleString()} invalid/needs_review email(s).`;
+      }
+      // 3) On-the-fly filtering (example: “Show rows with CEO + invalid email”)
+      if (text.startsWith("show rows with")) {
+        // Very naive: parse “with X + Y”
+        const parts = text.replace("show rows with", "").split("+").map(p => p.trim());
+        let results = cleanedData;
+        parts.forEach(p => {
+          results = results.filter(r => 
+            r.name.toLowerCase().includes(p) ||
+            r.email.toLowerCase().includes(p) ||
+            r.company.toLowerCase().includes(p) ||
+            (r.status !== "valid" && p.includes("invalid"))
+          );
+        });
+        return `Found ${results.length.toLocaleString()} row(s) matching those criteria.`;
+      }
+      // 4) Code snippet generation (example: “Add VP of Marketing to Score 4 keywords”)
+      if (text.includes("add") && text.includes("to score")) {
+        const match = /add\s+(.*?)\s+to\s+score\s+(\d+)/i.exec(text);
+        if (match) {
+          const keyword = match[1];
+          const score = match[2];
+          return `Here’s a dummy snippet you can integrate into the Title Score node:\n\`\`\`js\n// Add "${keyword}" as a score ${score} keyword\ntitleScoreConfig.keywords.push({ keyword: "${keyword}", score: ${score} });\n\`\`\`\nYou can copy-paste this into your Title Score configuration.`;
+        }
+      }
+      // 5) Suggest missing nodes (example: “Add LinkedIn Enrichment?”)
+      if (text.includes("add") && text.includes("enrichment")) {
+        return `I suggest adding a **LinkedIn Enrichment** node to your pipeline to fetch additional profile details. Would you like me to insert it? (Respond with "yes" or "no")`;
+      }
+      // 6) Scheduling prompts (example: “Schedule export daily at 9am IST”)
+      if (text.includes("schedule export")) {
+        return `Sure! I can schedule an export. However, scheduling is not fully implemented in this demo. Create a saved export in the Export tab and toggle “Schedule”.`;
+      }
+      // 7) Fallbacks
+      const fallbacks = [
+        "🤔 Iʼm not certain about that. Try asking me about uploading, cleaning, exporting, or history.",
+        "Can you clarify that for me? I want to make sure I help correctly.",
+        "Iʼm not sure I understand. Could you please rephrase?"
+      ];
+      return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+    }
+
+    function sendMessage() {
+      const text = chatInput.value.trim();
+      if (!text) return;
+      // Append user message
+      const userMsg = document.createElement("div");
+      userMsg.className = "message user";
+      userMsg.innerHTML = `<div class="bubble">${text}</div>`;
+      chatBody.appendChild(userMsg);
+
+      // Clear input & disable button
+      chatInput.value = "";
+      chatSendBtn.disabled = true;
+      chatBody.scrollTop = chatBody.scrollHeight;
+
+      // After short delay, append bot response
+      setTimeout(() => {
+        const reply = getBotReply(text);
+        const botMsg = document.createElement("div");
+        botMsg.className = "message bot";
+        const htmlized = reply.replace(/\n/g, "<br>");
+        botMsg.innerHTML = `<div class="bubble">${htmlized}</div>`;
+        chatBody.appendChild(botMsg);
+        chatBody.scrollTop = chatBody.scrollHeight;
+      }, 600);
+    }
+
+    chatInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !chatSendBtn.disabled) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+    chatSendBtn.addEventListener("click", sendMessage);
+
+    // -------------------------------
+    // Event Listeners & Initialization
+    // -------------------------------
+    document.getElementById("chooseFileBtn").addEventListener("click", () => {
+      document.getElementById("csvFile").click();
+    });
+
+    document.getElementById("csvFile").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const text = evt.target.result;
+        const lines = text.split(/\r?\n/);
+        if (lines.length <= 1) {
+          showToast("CSV file is empty or malformed.", "error");
+          return;
+        }
+        const rawHeaders = lines[0].split(",");
+        const headers = rawHeaders.map(h => h.trim().toLowerCase());
+        const data = [];
+        for (let i = 1; i < lines.length; i++) {
+          if (lines[i].trim()) {
+            const values = lines[i].split(",");
+            const record = {};
+            headers.forEach((header, idx) => {
+              record[header] = values[idx] ? values[idx].trim() : "";
+            });
+            record.id = i;
+            record.name = record["name"] || "";
+            record.email = record["email"] || "";
+            record.company = record["company"] || "";
+            record.phone = record["phone"] || "";
+            record.status = "pending";
+            record.priority = Math.ceil(Math.random() * 5);
+            record.source = "upload";
+            data.push(record);
+          }
+        }
+        rawData = data;
+        showToast("CSV file uploaded successfully!");
+
+        // Step 1 → show loading animation then reveal Step 2
+        transitionToClean();
+      };
+      reader.readAsText(file);
+    });
+
+    document.getElementById("useDummyDataBtn").addEventListener("click", () => {
+      rawData = []; // clear any previous
+      transitionToClean();
+      setTimeout(() => {
+        rawData = generateDummyData(100000);
+        document.getElementById("totalRecords").textContent = rawData.length.toLocaleString();
+        showToast("Generated 100 000 dummy records!");
+      }, 1500);
+    });
+
+    function transitionToClean() {
+      currentStep = 2;
+      updateStepUI(currentStep);
+      showSection("cleanSection");
+
+      document.getElementById("cleaningResults").classList.add("hidden");
+      document.getElementById("loadingSection").classList.remove("hidden");
+      document.getElementById("processingText").textContent = "Analyzing data structure…";
+      document.getElementById("progressBar").style.width = "0%";
+      document.getElementById("progressPercent").textContent = "0%";
+      document.getElementById("progressCircle").style.strokeDashoffset = 283;
+
+      setTimeout(() => {
+        document.getElementById("loadingSection").classList.add("hidden");
+        document.getElementById("cleaningResults").classList.remove("hidden");
+        document.getElementById("totalRecords").textContent = rawData.length.toLocaleString();
+        document.getElementById("validRecords").textContent = "0";
+        document.getElementById("issuesFound").textContent = "0";
+        document.getElementById("duplicatesFound").textContent = "0";
+      }, 1500);
+    }
+
+    document.getElementById("startCleaningBtn").addEventListener("click", () => {
+      document.getElementById("loadingSection").classList.remove("hidden");
+      document.getElementById("cleaningResults").classList.add("hidden");
+
+      let progress = 0;
+      const progressBar = document.getElementById("progressBar");
+      const progressPercent = document.getElementById("progressPercent");
+      const progressCircle = document.getElementById("progressCircle");
+      const processingText = document.getElementById("processingText");
+
+      const steps = [
+        "Analyzing data structure…",
+        "Validating email addresses…",
+        "Standardizing names…",
+        "Cleaning company names…",
+        "Removing duplicates…",
+        "Finalizing results…"
+      ];
+
+      let stepIndex = 0;
+      const interval = setInterval(() => {
+        progress += Math.random() * 20;
+        if (progress > 100) progress = 100;
+
+        progressBar.style.width = progress + "%";
+        progressPercent.textContent = Math.round(progress) + "%";
+
+        const circumference = 283;
+        const offset = circumference - (progress / 100) * circumference;
+        progressCircle.style.strokeDashoffset = offset;
+
+        if (stepIndex < steps.length) {
+          processingText.textContent = steps[stepIndex];
+          stepIndex++;
+        }
+
+        if (progress >= 100) {
+          clearInterval(interval);
+          setTimeout(() => {
+            cleanData();
+            document.getElementById("loadingSection").classList.add("hidden");
+            document.getElementById("cleaningResults").classList.remove("hidden");
+            showToast("Data cleaning completed!");
+
+            currentStep = 3;
+            updateStepUI(currentStep);
+            showSection("inspectSection");
+
+            renderDataTableInspect(filteredDataInspect, 1);
+          }, 500);
+        }
+      }, 300);
+    });
+
+    // Inspect Filtering & Pagination
+    document.getElementById("filterColumnInspect").addEventListener("change", filterDataInspect);
+    document.getElementById("filterValueInspect").addEventListener("input", filterDataInspect);
+    document.getElementById("prevPageBtnInspect").addEventListener("click", () => {
+      if (currentPageInspect > 1) {
+        currentPageInspect--;
+        renderDataTableInspect(filteredDataInspect, currentPageInspect);
+      }
+    });
+    document.getElementById("nextPageBtnInspect").addEventListener("click", () => {
+      const totalPages = Math.ceil(filteredDataInspect.length / recordsPerPageInspect);
+      if (currentPageInspect < totalPages) {
+        currentPageInspect++;
+        renderDataTableInspect(filteredDataInspect, currentPageInspect);
+      }
+    });
+
+    document.getElementById("proceedToExportBtn").addEventListener("click", () => {
+      currentStep = 4;
+      updateStepUI(currentStep);
+      showSection("exportSection");
+      document.getElementById("exportValidCount").textContent =
+        `${cleanedData.filter(r => r.status === "valid").length.toLocaleString()} valid records`;
+    });
+
+    document.getElementById("downloadBtn").addEventListener("click", downloadData);
+
+    // Notifications Toast
+    document.getElementById("notificationBtn").addEventListener("click", () => {
+      showToast("No new notifications");
+      document.getElementById("notificationBadge").textContent = "0";
+    });
+
+    // Global Search (Inspect + History integration)
+    document.getElementById("globalSearchIcon").addEventListener("click", () => {
+      document.getElementById("globalSearchInput").focus();
+    });
+    document.getElementById("globalSearchInput").addEventListener("input", (e) => {
+      const query = e.target.value.toLowerCase();
+      if (cleanedData.length > 0 && showSectionName() === "inspectSection") {
+        filteredDataInspect = cleanedData.filter(r =>
+          r.name.toLowerCase().includes(query) ||
+          r.email.toLowerCase().includes(query) ||
+          r.company.toLowerCase().includes(query)
+        );
+        currentPageInspect = 1;
+        renderDataTableInspect(filteredDataInspect, currentPageInspect);
+      }
+      if (showSectionName() === "historyView") {
+        filterHistoryData();
+      }
+    });
+
+    // History Filters
+    document.getElementById("historySearchInput").addEventListener("input", filterHistoryData);
+    document.getElementById("historyStartDate").addEventListener("change", filterHistoryData);
+    document.getElementById("historyEndDate").addEventListener("change", filterHistoryData);
+    document.getElementById("historyStatusFilter").addEventListener("change", filterHistoryData);
+    document.getElementById("clearHistoryFilters").addEventListener("click", clearHistoryFilters);
+    document.getElementById("historyPrevPage").addEventListener("click", () => {
+      if (historyPage > 1) {
+        historyPage--;
+        renderHistoryTable(historyPage);
+      }
+    });
+    document.getElementById("historyNextPage").addEventListener("click", () => {
+      const total = Math.ceil(filteredHistoryData.length / historyPerPage);
+      if (historyPage < total) {
+        historyPage++;
+        renderHistoryTable(historyPage);
+      }
+    });
+    document.getElementById("historyModalClose").addEventListener("click", closeHistoryModal);
+    document.getElementById("historyModalCloseBtn").addEventListener("click", closeHistoryModal);
+    document.getElementById("historyModalReexport").addEventListener("click", () => {
+      showToast("Re-export initiated (dummy).");
+      closeHistoryModal();
+    });
+
+    // Stepper Clicks
+    document.querySelectorAll("#progressStepper [data-step]").forEach(el => {
+      el.addEventListener("click", (e) => {
+        const view = e.currentTarget.dataset.step;
+        showSection(view);
+        if (view === "uploadSection") currentStep = 1;
+        if (view === "cleanSection") currentStep = 2;
+        if (view === "inspectSection") currentStep = 3;
+        if (view === "exportSection") currentStep = 4;
+        updateStepUI(currentStep);
+      });
+    });
+
+    // History & Settings top‐nav
+    document.querySelectorAll("[data-view]").forEach(el => {
+      el.addEventListener("click", (e) => {
+        const view = e.currentTarget.dataset.view;
+        showSection(view);
+      });
+    });
+
+    // Determine current visible section (helper)
+    function showSectionName() {
+      const sections = [
+        "uploadSection",
+        "cleanSection",
+        "inspectSection",
+        "exportSection",
+        "historyView",
+        "settingsView"
+      ];
+      for (let id of sections) {
+        const el = document.getElementById(id);
+        if (!el.classList.contains("hidden")) return id;
+      }
+      return null;
+    }
+
+    // Initialize UI
+    updateStepUI(currentStep);
+    showSection("uploadSection");
+    document.getElementById("cleaningResults").classList.add("hidden");
+    document.getElementById("loadingSection").classList.add("hidden");
+  </script>
+</body>
+</html>
